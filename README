@@ -1,0 +1,10 @@
+This repository contains a generic makefile for C/C++ projects in a Linux 
+environment.  It does automatic dependency generation and linking.  The
+Project Makefile is designed to build all items under the source tree.  The
+Workspace Makefile is designed to reside in a folder containing multiple
+projects.  The Workspace Makefile assumes all the Projects in its directory
+use the Project Makefile and are structured accordingly.  It does NOT do a
+recursive make but instead reads the build definitions in each Project's
+make/ directory and builds them accordingly.  More information about setting
+up a Project using this makefile can be found in the Project README.txt
+
