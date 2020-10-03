@@ -1,5 +1,5 @@
 
-CFLAGS += -DDEBUG -g
-CXXFLAGS += -DDEBUG -g
-LDFLAGS += -g
+CFLAGS:=-DDEBUG -g -Wall
+CXXFLAGS:=-DDEBUG -g -Wall
+LDFLAGS:=-g
 

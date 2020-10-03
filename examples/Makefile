@@ -2,7 +2,7 @@
 #                                                                              #
 # Basic C/C++ Workspace Makefile for Linux                                     #
 # Author: Benjamin Cox                                                         #
-# Version 1.0                                                                  #
+# Version 1.1                                                                  #
 #                                                                              #
 ################################################################################
 
@@ -18,6 +18,9 @@ AS:=as
 AR:=ar
 RANLIB:=ranlib
 OBJCOPY:=objcopy
+
+LEX:=flex
+YACC:=bison
 
 ifeq ($(CONFIG),)
     CONFIG:=Debug
@@ -98,7 +101,7 @@ help:
 	@cat README.txt
 
 clean: $(CLEAN_TARGETS)
-	@echo "Cleaning Build Directory"
+	@echo "CLEANING BUILD DIRECTORY"
 	@rm -rf $(BUILD_BASE_DIR)
 
 clean-docs: $(CLEAN_DOCS_TARGETS)

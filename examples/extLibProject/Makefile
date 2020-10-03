@@ -2,7 +2,7 @@
 #                                                                              #
 # Basic C/C++ Project Makefile for Linux                                       #
 # Author: Benjamin Cox                                                         #
-# Version 1.0                                                                  #
+# Version 1.1                                                                  #
 #                                                                              #
 ################################################################################
 
@@ -19,6 +19,9 @@ AR:=ar
 RANLIB:=ranlib
 OBJCOPY:=objcopy
 
+LEX:=flex
+YACC:=bison
+
 #Our base directories
 SRC_BASE_DIR:=src/
 TEST_BASE_DIR:=test/
@@ -30,6 +33,7 @@ DOCS_DIR:=docs/
 
 .PHONY: default default1 all test run-tests analyze format clean help
 .SUFFIXES: 
+
 
 ifeq ($(CONFIG),)
     CONFIG:=Debug
@@ -91,7 +95,7 @@ help:
 	@cat README.txt
 
 clean: $(CLEAN_TARGETS)
-	@echo "Cleaning Build Directory"
+	@echo "CLEANING BUILD DIRECTORY"
 	@rm -rf $(BUILD_BASE_DIR)
 
 clean-docs: $(CLEAN_DOCS_TARGETS)

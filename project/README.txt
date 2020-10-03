@@ -12,13 +12,13 @@ file extension.
 
 The top-level makefile is designed to use the following build targets:
    * default - Build application(s) and/or library(ies) in project
-   * all - Build application(s) and/or library(ies) plus unit tests
    * test - Build unit-tests
+   * docs - Generate doxygen documents
+   * all - Build application(s) and/or library(ies) plus unit tests and docs
    * run-tests - Run all unit tests
    * analyze - Runs static analysis tools on the project
    * format - Calls clang-format on all source files.
-   * docs - Generate doxygen documents
-   * clean - Cleans intermendiate files and complied applications
+   * clean - Cleans intermendiate files and complied applications and tests
    * clean-docs - Cleans generated documents
    * clean-all - Cleans all - docs and build files
 
@@ -118,8 +118,23 @@ $(eval $(call app, ExtLibApp,                            \
                    -I $(EXT_LIB_DIR)include/exampleLib  \
                     ))
 
+Flex/Bison (Lex/Yacc):
+   The makefile automatically supports flex and bison generated code.  The
+makefile uses the lex extension to determine whether to generate a C or C++
+lexer/parser.  Lex extensions .l .lex and .flex generate a C lexer while
+extensions .ll .lex++ .flex++ .lexpp and .flexpp genrate a C++ lexer. Bison
+extension .y is generated into a C parser while .yy .y++ and .ypp extensions
+are generated into a C++ parser.
+
+IMPORTANT:
+   Generated file name deviate from the standard naming convention and instead
+are output as the lex/yacc file name with the .c(c) and .h extentions appended.
+I.E. parser.l --> lexer.l.{c,h} and lexer.ll --> lexer.ll.{cc,h}
+     parser.y --> parser.y.{c,h} and parcer.yy --> parser.yy.{cc,h}
+
+
 Future Development:
-   * Add support for code generation tools (e.g. flex/lex, protoBuf, ...)
+   * Add support for more code generation tools (e.g. protoBuf, ...)
    * Add support for building RPM and DEB packages
    * Add configuration to llow profiling using gprof and/or gcov
 
