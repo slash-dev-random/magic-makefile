@@ -2,7 +2,8 @@
 #                                                                              #
 # Basic C/C++ Project Makefile for Linux                                       #
 # Author: Benjamin Cox                                                         #
-# Version 1.1                                                                  #
+# License: CC0 1.0 Universal Licence                                           #
+# Version 1.2                                                                  #
 #                                                                              #
 ################################################################################
 
@@ -19,8 +20,10 @@ AR:=ar
 RANLIB:=ranlib
 OBJCOPY:=objcopy
 
+#CODE GENERATORS
 LEX:=flex
 YACC:=bison
+PROTOC:=protoc
 
 #Our base directories
 SRC_BASE_DIR:=src/
@@ -31,9 +34,8 @@ CONFIG_DIR:=config/
 BUILD_BASE_DIR:=build/
 DOCS_DIR:=docs/
 
-.PHONY: default default1 all test run-tests analyze format clean help
+.PHONY: default default1 all test run-tests analyze format generate-code clean clean-docs clean-all help
 .SUFFIXES: 
-
 
 ifeq ($(CONFIG),)
     CONFIG:=Debug
@@ -60,6 +62,7 @@ DOCS_TARGETS:=
 CLEAN_DOCS_TARGETS:= 
 ANALYZE_TARGETS:=
 FORMAT_TARGETS:=
+GENERATED_TARGETS:=
 
 #Include makefile rules/settings
 include rules.mk
@@ -93,6 +96,8 @@ format: $(FORMAT_TARGETS)
 
 help:
 	@cat README.txt
+
+generate-code: $(GENERATED_TARGETS)
 
 clean: $(CLEAN_TARGETS)
 	@echo "CLEANING BUILD DIRECTORY"

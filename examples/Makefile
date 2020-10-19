@@ -2,14 +2,15 @@
 #                                                                              #
 # Basic C/C++ Workspace Makefile for Linux                                     #
 # Author: Benjamin Cox                                                         #
-# Version 1.1                                                                  #
+# License: CC0 1.0 Universal Licence                                           #
+# Version 1.2                                                                  #
 #                                                                              #
 ################################################################################
 
 #Default Configuration is Debug
 CONFIG?=Debug
 
-#Make sure our compiler and linker are set
+#Make sure our compiler(s) and linker(s) are set
 CC:=gcc
 CXX:=g++
 LD:=gcc
@@ -19,8 +20,10 @@ AR:=ar
 RANLIB:=ranlib
 OBJCOPY:=objcopy
 
+#CODE GENERATORS
 LEX:=flex
 YACC:=bison
+PROTOC:=protoc
 
 ifeq ($(CONFIG),)
     CONFIG:=Debug
@@ -37,6 +40,7 @@ DOCS_TARGETS:=
 CLEAN_DOCS_TARGETS:= 
 ANALYZE_TARGETS:=
 FORMAT_TARGETS:=
+GENERATED_TARGETS:=
 
 #Include makefile rules/settings
 include rules.mk
@@ -99,6 +103,8 @@ format: $(FORMAT_TARGETS)
 
 help:
 	@cat README.txt
+
+generate-code: $(GENERATED_TARGETS)
 
 clean: $(CLEAN_TARGETS)
 	@echo "CLEANING BUILD DIRECTORY"

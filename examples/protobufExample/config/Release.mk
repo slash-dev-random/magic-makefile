@@ -1,0 +1,4 @@
+
+CFLAGS:=-DRELEASE -O2 -Wall
+CXXFLAGS:=-DRELEASE -O2 -Wall
+

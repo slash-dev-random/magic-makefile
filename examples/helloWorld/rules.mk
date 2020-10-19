@@ -1,3 +1,11 @@
+################################################################################
+#                                                                              #
+# Basic C/C++ Makefile Rules for Linux                                         #
+# Author: Benjamin Cox                                                         #
+# License: CC0 1.0 Universal Licence                                           #
+# Version 1.2                                                                  #
+#                                                                              #
+################################################################################
 
 define objcopy_rules =
 $(1): $(2)
@@ -152,6 +160,10 @@ $(1)$(2)%.o: $(2)%.c
 
 endef
 
+################################################################################
+#                            CODE GENERATION RULES                             #
+################################################################################
+
 #1 - SOURCE DIR
 #2 - LEX_FLAGS
 define lex_directory_rules =
@@ -243,118 +255,127 @@ endef
 define yacc_directory_rules =
 
 $(1)%.y.c: $(1)%.y
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) $(2) --defines=$$(@:.c=.h) -o $$@ $$<
 
 $(1)%.y.h: $(1)%.y
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) $(2) --defines=$$@ -o $$(@:.h=.c) $$<
 
 $(1)%.Y.c: $(1)%.Y
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) $(2) --defines=$$(@:.c=.h) -o $$@ $$<
 
 $(1)%.Y.h: $(1)%.Y
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) $(2) --defines=$$@ -o $$(@:.h=.c) $$<
 
-
 $(1)%.yy.cc: $(1)%.yy
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$(@:.cc=.h) -o $$@ $$<
 
 $(1)%.yy.h: $(1)%.yy
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$@ -o $$(@:.h=.cc) $$<
 
 $(1)%.YY.cc: $(1)%.YY
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$(@:.cc=.h) -o $$@ $$<
 
 $(1)%.YY.h: $(1)%.YY
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$@ -o $$(@:.h=.cc) $$<
 
 $(1)%.ypp.cc: $(1)%.ypp
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$(@:.cc=.h) -o $$@ $$<
 
 $(1)%.ypp.h: $(1)%.ypp
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$@ -o $$(@:.h=.cc) $$<
 
 $(1)%.YPP.cc: $(1)%.YPP
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$(@:.cc=.h) -o $$@ $$<
 
 $(1)%.YPP.h: $(1)%.YPP
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$@ -o $$(@:.h=.cc) $$<
 
 $(1)%.y++.cc: $(1)%.y++
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$(@:.cc=.h) -o $$@ $$<
 
 $(1)%.y++.h: $(1)%.y++
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$@ -o $$(@:.h=.cc) $$<
 
 $(1)%.Y++.cc: $(1)%.Y++
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$(@:.cc=.h) -o $$@ $$<
 
 $(1)%.Y++.h: $(1)%.Y++
-	@echo "YACC   $$<"
+	@echo "YACC     $$<"
 	@$$(YACC) -L c++ $(2) --defines=$$@ -o $$(@:.h=.cc) $$<
 
 endef
+
+
+#1 - OBJCET BASE DIR
+#2 - SOURCE DIR
+#3 - PROTOBUF_FLAGS
+define protobuf_directory_rules =
+
+#PROTOBUF OUTPUTS CC, H & DEPENDENCIES FILES SIMULANEOUSLY
+$(2)%.pb.cc $(2)%.pb.h: $(2)%.proto
+	@echo "PROTOC   $$<"
+	@$$(PROTOC) $(3) -I=$(2) -I=$$(SRC_DIR) --cpp_out=$$(dir $$@) --dependency_out=$(1)$$@.d $$<
+
+endef
+
+################################################################################
+#                               DEPENDENCY  RULES                              #
+################################################################################
 
 #1 - OBJCET BASE DIR
 #2 - SOURCE DIR
 #3 - CXX FLAGS
-#4 - C FLAGS
-define dependency_rules =
-$(1)$(2)%.d: $(2)%.cc
-	@set -e;                                                     \
-	$$(CXX) -M -MG -MT "$(1)$$(<:.cc=.o) $$@" -MF $$@ $(3) $$< ; \
-	sed -i "s|\s\([^\s/]\+\s\+\)| $$(dir $$<)\1|g" $$@
+define cpp_dependency_rules =
 
-$(1)$(2)%.d: $(2)%.cp
-	@set -e;                                                     \
-	$$(CXX) -M -MG -MT "$(1)$$(<:.cc=.o) $$@" -MF $$@ $(3) $$< ; \
-	sed -i "s|\s\([^\s/]\+\s\+\)| $$(dir $$<)\1|g" $$@
+$(1)$(2)%.d: $(2)%.cc $$(GENERATED_TARGETS)
+	@$$(CXX) -M -MT "$$(@:.d=.o) $$@" -MF $$@ $(3) $$<
 
-$(1)$(2)%.d: $(2)%.cxx
-	@set -e;                                                     \
-	$$(CXX) -M -MG -MT "$(1)$$(<:.cc=.o) $$@" -MF $$@ $(3) $$< ; \
-	sed -i "s|\s\([^\s/]\+\s\+\)| $$(dir $$<)\1|g" $$@
+$(1)$(2)%.d: $(2)%.cp $$(GENERATED_TARGETS)
+	@$$(CXX) -M -MT "$$(@:.d=.o) $$@" -MF $$@ $(3) $$<
 
-$(1)$(2)%.d: $(2)%.cpp
-	@set -e;                                                     \
-	$$(CXX) -M -MG -MT "$(1)$$(<:.cc=.o) $$@" -MF $$@ $(3) $$< ; \
-	sed -i "s|\s\([^\s/]\+\s\+\)| $$(dir $$<)\1|g" $$@
+$(1)$(2)%.d: $(2)%.cxx $$(GENERATED_TARGETS)
+	@$$(CXX) -M -MT "$$(@:.d=.o) $$@" -MF $$@ $(3) $$<
 
-$(1)$(2)%.d: $(2)%.CPP
-	@set -e;                                                     \
-	$$(CXX) -M -MG -MT "$(1)$$(<:.cc=.o) $$@" -MF $$@ $(3) $$< ; \
-	sed -i "s|\s\([^\s/]\+\s\+\)| $$(dir $$<)\1|g" $$@
+$(1)$(2)%.d: $(2)%.cpp $$(GENERATED_TARGETS)
+	@$$(CXX) -M -MT "$$(@:.d=.o) $$@" -MF $$@ $(3) $$<
 
-$(1)$(2)%.d: $(2)%.c++
-	@set -e;                                                     \
-	$$(CXX) -M -MG -MT "$(1)$$(<:.cc=.o) $$@" -MF $$@ $(3) $$< ; \
-	sed -i "s|\s\([^\s/]\+\s\+\)| $$(dir $$<)\1|g" $$@
+$(1)$(2)%.d: $(2)%.CPP $$(GENERATED_TARGETS)
+	@$$(CXX) -M -MT "$$(@:.d=.o) $$@" -MF $$@ $(3) $$<
 
-$(1)$(2)%.d: $(2)%.C
-	@set -e;                                                     \
-	$$(CXX) -M -MG -MT "$(1)$$(<:.cc=.o) $$@" -MF $$@ $(3) $$< ; \
-	sed -i "s|\s\([^\s/]\+\s\+\)| $$(dir $$<)\1|g" $$@
+$(1)$(2)%.d: $(2)%.c++ $$(GENERATED_TARGETS)
+	@$$(CXX) -M -MT "$$(@:.d=.o) $$@" -MF $$@ $(3) $$<
 
-$(1)$(2)%.d: $(2)%.c
-	@set -e;                                                     \
-	$$(CC) -M -MG -MT "$(1)$$(<:.cc=.o) $$@" -MF $$@ $(4) $$< ;  \
-	sed -i "s|\s\([^\s/]\+\s\+\)| $$(dir $$<)\1|g" $$@
+$(1)$(2)%.d: $(2)%.C $$(GENERATED_TARGETS)
+	@$$(CXX) -M -MT "$$(@:.d=.o) $$@" -MF $$@ $(3) $$<
 
 endef
+
+
+#1 - OBJCET BASE DIR
+#2 - SOURCE DIR
+#3 - C FLAGS
+define c_dependency_rules =
+
+$(1)$(2)%.d: $(2)%.c $$(GENERATED_TARGETS)
+	@$$(CC) -M -MT "$$(@:.d=.o) $$@" -MF $$@ $(3) $$<
+
+endef
+
 
 ################################################################################
 #                                DOXYGEN  RULES                                #
@@ -467,7 +488,7 @@ MY_LDFLAGS:=$$(LDFLAGS) $$(MY_LDFLAGS)
 MY_LEX_FLAGS:=$$(LEX_FLAGS) $$(MY_LEX_FLAGS)
 
 MY_CPPCHECK_FLAGS:= -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)                   \
-                    --enable=warning --enable=style --enable=performance \
+                    --enable=warning --enable=style --enable=performance  \
                     --enable=portability --suppress=unusedFunction  -q 
 
 ifeq ($$(UNIT_TEST),GTEST)
@@ -495,45 +516,70 @@ SRC_C_FILES:=$$(shell find $$(SRC_DIR) -name *.c)
 
 SRC_FILES:=$$(SRC_CXX_FILES) $$(SRC_C_FILES)
 
-LEX_YACC_FILES:=$$(shell find $$(SRC_DIR) -name *.l      -o -name *.lex    \
-                                       -o -name *.flex   -o -name *.ll     \
-                                       -o -name *.l++    -o -name *.lex++  \
-                                       -o -name *.flex++ -o -name *.lpp    \
-                                       -o -name *.lexpp  -o -name *.flexpp \
-                                       -o -name *.y      -o -name *.Y      \
-                                       -o -name *.yy     -o -name *.YY     \
-                                       -o -name *.ypp    -o -name *.YPP    \
-                                       -o -name *.y++    -o -name *.Y++)
+#FIND CODE GENERATION FILES AND GENERATE SOURCE LIST
 
-GEN_LEX_YACC_FILES:=$$(LEX_YACC_FILES)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.l=.l.c)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.lex=.lex.c)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.flex=.flex.c)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.ll=.ll.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.l++=.l++.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.lex++=.lex++.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.flex++=.flex++.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.lpp=.lpp.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.lexpp=.lexpp.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.flexpp=.flexpp.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.y=.y.c)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.Y=.Y.c)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.yy=.yy.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.YY=.YY.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.y++=.y++.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.Y++=.Y++.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.ypp=.ypp.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.YPP=.YPP.cc)
+GEN_SRC_C_FILES:=
+GEN_SRC_CXX_FILES:=
+GEN_SRC_HEADER_FILES:=
 
-GEN_SRC_FILES:=$$(GEN_LEX_YACC_FILES)
 
-GEN_SRC_HEADER_FILES:=$$(GEN_LEX_YACC_FILES:.c=.h)
-GEN_SRC_HEADER_FILES:=$$(GEN_SRC_HEADER_FILES:.cc=.h)
+#YOU SHOULD REALLY ONLY USE .l AND .y FOR C APPLICATIONS AND
+# .ll and .yy FOR CPP APPLICATIONS -- I'M TRYING TO ACCOMIDATE ALL
+#THE FILE EXTENSION VARIATIONS FOR LEX/YACC WHILE SEARCHING THE WEB
+LEX_YACC_C_FILES:=$$(shell find $$(SRC_DIR) -name *.l      -o -name *.lex    \
+                                         -o -name *.flex   -o -name *.y      \
+                                         -o -name *.Y)
 
-.PRECIOUS: $$(GEN_SRC_FILES) $$(GEN_SRC_HEADER_FILES)
+LEX_YACC_CXX_FILES:=$$(shell find $$(SRC_DIR) -name *.ll     -o -name *.l++     \
+                                           -o -name *.lex++  -o -name *.flex++  \
+                                           -o -name *.lpp    -o -name *.lexpp   \
+                                           -o -name *.flexpp -o -name *.yy      \
+                                           -o -name *.YY     -o -name *.ypp     \
+                                           -o -name *.YPP    -o -name *.y++     \
+                                           -o -name *.Y++   )
+
+GEN_LEX_YACC_C_FILES:=$$(LEX_YACC_C_FILES)
+GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.l=.l.c)
+GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.lex=.lex.c)
+GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.flex=.flex.c)
+GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.y=.y.c)
+GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.Y=.Y.c)
+
+GEN_LEX_YACC_CXX_FILES:=$$(LEX_YACC_CXX_FILES:.ll=.ll.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.l++=.l++.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.lex++=.lex++.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.flex++=.flex++.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.lpp=.lpp.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.lexpp=.lexpp.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.flexpp=.flexpp.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.yy=.yy.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.YY=.YY.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.y++=.y++.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.Y++=.Y++.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.ypp=.ypp.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.YPP=.YPP.cc)
+
+GEN_LEX_YACC_HEADER_FILES:=$$(GEN_LEX_YACC_C_FILES:.c=.h) $$(GEN_LEX_YACC_CXX_FILES:.cc=.h)
+
+#ADD LEX/YACC FILES TO THE MAIN GENERATED FILE LIST
+GEN_SRC_C_FILES:=$$(GEN_SRC_C_FILES) $$(GEN_LEX_YACC_C_FILES)
+GEN_SRC_CXX_FILES:=$$(GEN_SRC_CXX_FILES) $$(GEN_LEX_YACC_CXX_FILES)
+GEN_SRC_HEADER_FILES:=$$(GEN_SRC_HEADER_FILES) $$(GEN_LEX_YACC_HEADER_FILES)
+
+PROTOBUF_FILES:=$$(shell find $$(SRC_DIR) -name *.proto)
+GEN_PROTOBUF_FILES:=$$(PROTOBUF_FILES:.proto=.pb.cc)
+GEN_PROTOBUF_HEADER_FILES:=$$(PROTOBUF_FILES:.proto=.pb.h)
+
+#ADD PROTOBUF FILES TO MAIL GENERATED FILE LIST
+GEN_SRC_CXX_FILES:=$$(GEN_SRC_CXX_FILES) $$(GEN_PROTOBUF_FILES)
+GEN_SRC_HEADER_FILES:=$$(GEN_SRC_HEADER_FILES) $$(GEN_PROTOBUF_HEADER_FILES)
+
+#GENERATED_TARGETS SPANS ALL BUILD UNITS
+GENERATED_TARGETS:=$$(GENERATED_TARGETS) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) $$(GEN_SRC_HEADER_FILES)
+.PRECIOUS: $$(GENERATED_TARGETS)
 
 #Identify all object files that need to be created based on the source files
-SRC_OBJ_FILES := $$(addprefix $$(OBJS_BASE_DIR),$$(SRC_FILES) $$(GEN_SRC_FILES))
+SRC_OBJ_FILES := $$(addprefix $$(OBJS_BASE_DIR),$$(SRC_FILES) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES))
 SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cc=.o)
 SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cp=.o)
 SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cxx=.o)
@@ -544,12 +590,12 @@ SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.C=.o)
 SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.c=.o)
 
 #USE g++ to link if there are C++ files present
-ifneq ($$(strip $$(SRC_CXX_FILES)),)
+ifneq ($$(strip $$(SRC_CXX_FILES) $$(GEN_SRC_CXX_FILES)),)
 LD=$$(LDXX)
 endif
 
-ifneq ($$(strip $$(GEN_SRC_FILES)),)
-$$(eval $$(call clean_generated_files_rule, $$(SRC_DIR),  $$(GEN_SRC_FILES) $$(GEN_SRC_HEADER_FILES)) )
+ifneq ($$(strip $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES)),)
+$$(eval $$(call clean_generated_files_rule, $$(SRC_DIR), $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) $$(GEN_SRC_HEADER_FILES)) )
 endif
 
 
@@ -648,15 +694,29 @@ $$(eval $$(call clang_format_rules, $$(APP_NAME)-test,  \
                                     $$(TEST_SRC_FILES)))
 endif
 
-################################################################################
-#                                 LINK RULES                                   #
-################################################################################
 
 ifneq ($$(MAKECMDGOALS),clean)
 ifneq ($$(MAKECMDGOALS),clean-docs)
 ifneq ($$(MAKECMDGOALS),clean-all)
 ifneq ($$(MAKECMDGOALS),format)
 ifneq ($$(MAKECMDGOALS),docs)
+
+################################################################################
+#                            CODE GENERATION RULES                             #
+################################################################################
+
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call lex_directory_rules,$$(bdir),$$(MY_LEX_FLAGS))))
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call yacc_directory_rules,$$(bdir),$$(MY_YACC_FLAGS))))
+
+#PROTOBUF GENERATION ALSO GENERATES DEPENDENCIES SO WE NEED OBJS_BASE_DIR
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call protobuf_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_PROTOC_FLAGS))))
+
+
+ifneq ($$(MAKECMDGOALS),generate-code)
+
+################################################################################
+#                                 LINK RULES                                   #
+################################################################################
 
 $$(eval $$(call std_link_rules,$$(TARGET_DIR),$$(APP_NAME),        \
                                $$(SRC_OBJ_FILES) $$(MY_EXTERNALS), \
@@ -672,9 +732,6 @@ endif
 #                                COMPILE RULES                                 #
 ################################################################################
 
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call lex_directory_rules,$$(bdir),$$(MY_LEX_FLAGS))))
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call yacc_directory_rules,$$(bdir),$$(MY_YACC_FLAGS))))
-
 $$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call cpp_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
 $$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call c_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
 
@@ -688,15 +745,20 @@ endif
 #                       AUTOMATIC DEPENDENCY GENERATION                        #
 ################################################################################
 
+-include $$(addprefix $$(LIB_OBJ_BASE_DIR),$$(GEN_PROTOBUF_FILES:.cc=.cc.d))
+
 -include $$(SRC_OBJ_FILES:.o=.d)
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS),$$(MY_CFLAGS))))
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call cpp_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call c_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
 
 ifneq ($$(UNIT_TEST),NONE)
 -include $$(TEST_OBJ_FILES:.o=.d)
-$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS),$$(MY_CFLAGS))))
+$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call cpp_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
+$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call c_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
 endif
 
 
+endif
 endif
 endif
 endif
@@ -794,45 +856,67 @@ SRC_C_FILES := $$(shell find $$(SRC_DIR) -name *.c)
 
 SRC_FILES := $$(SRC_CXX_FILES) $$(SRC_C_FILES)
 
-LEX_YACC_FILES:=$$(shell find $$(SRC_DIR) -name *.l      -o -name *.lex    \
-                                       -o -name *.flex   -o -name *.ll     \
-                                       -o -name *.l++    -o -name *.lex++  \
-                                       -o -name *.flex++ -o -name *.lpp    \
-                                       -o -name *.lexpp  -o -name *.flexpp \
-                                       -o -name *.y      -o -name *.Y      \
-                                       -o -name *.yy     -o -name *.YY     \
-                                       -o -name *.ypp    -o -name *.YPP    \
-                                       -o -name *.y++    -o -name *.Y++)
+GEN_SRC_C_FILES:=
+GEN_SRC_CXX_FILES:=
+GEN_SRC_HEADER_FILES:=
 
-GEN_LEX_YACC_FILES:=$$(LEX_YACC_FILES)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.l=.l.c)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.lex=.lex.c)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.flex=.flex.c)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.ll=.ll.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.l++=.l++.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.lex++=.lex++.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.flex++=.flex++.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.lpp=.lpp.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.lexpp=.lexpp.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.flexpp=.flexpp.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.y=.y.c)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.Y=.Y.c)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.yy=.yy.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.YY=.YY.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.y++=.y++.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.Y++=.Y++.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.ypp=.ypp.cc)
-GEN_LEX_YACC_FILES:=$$(GEN_LEX_YACC_FILES:.YPP=.YPP.cc)
+#YOU SHOULD REALLY ONLY USE .l AND .y FOR C APPLICATIONS AND
+# .ll and .yy FOR CPP APPLICATIONS -- I'M TRYING TO ACCOMIDATE ALL
+#THE FILE EXTENSION VARIATIONS FOR LEX/YACC WHILE SEARCHING THE WEB
+LEX_YACC_C_FILES:=$$(shell find $$(SRC_DIR) -name *.l      -o -name *.lex    \
+                                         -o -name *.flex   -o -name *.y      \
+                                         -o -name *.Y)
 
-GEN_SRC_FILES:=$$(GEN_LEX_YACC_FILES)
+LEX_YACC_CXX_FILES:=$$(shell find $$(SRC_DIR) -name *.ll     -o -name *.l++     \
+                                           -o -name *.lex++  -o -name *.flex++  \
+                                           -o -name *.lpp    -o -name *.lexpp   \
+                                           -o -name *.flexpp -o -name *.yy      \
+                                           -o -name *.YY     -o -name *.ypp     \
+                                           -o -name *.YPP    -o -name *.y++     \
+                                           -o -name *.Y++   )
 
-GEN_SRC_HEADER_FILES:=$$(GEN_LEX_YACC_FILES:.c=.h)
-GEN_SRC_HEADER_FILES:=$$(GEN_SRC_HEADER_FILES:.cc=.h)
+GEN_LEX_YACC_C_FILES:=$$(LEX_YACC_C_FILES)
+GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.l=.l.c)
+GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.lex=.lex.c)
+GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.flex=.flex.c)
+GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.y=.y.c)
+GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.Y=.Y.c)
 
-.PRECIOUS: $$(GEN_SRC_FILES) $$(GEN_SRC_HEADER_FILES)
+GEN_LEX_YACC_CXX_FILES:=$$(LEX_YACC_CXX_FILES:.ll=.ll.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.l++=.l++.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.lex++=.lex++.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.flex++=.flex++.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.lpp=.lpp.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.lexpp=.lexpp.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.flexpp=.flexpp.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.yy=.yy.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.YY=.YY.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.y++=.y++.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.Y++=.Y++.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.ypp=.ypp.cc)
+GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.YPP=.YPP.cc)
+
+GEN_LEX_YACC_HEADER_FILES:=$$(GEN_LEX_YACC_C_FILES:.c=.h) $$(GEN_LEX_YACC_CXX_FILES:.cc=.h)
+
+#ADD LEX/YACC FILES TO THE MAIN GENERATED FILE LIST
+GEN_SRC_C_FILES:=$$(GEN_SRC_C_FILES) $$(GEN_LEX_YACC_C_FILES)
+GEN_SRC_CXX_FILES:=$$(GEN_SRC_CXX_FILES) $$(GEN_LEX_YACC_CXX_FILES)
+GEN_SRC_HEADER_FILES:=$$(GEN_SRC_HEADER_FILES) $$(GEN_LEX_YACC_HEADER_FILES)
+
+PROTOBUF_FILES:=$$(shell find $$(SRC_DIR) -name *.proto)
+GEN_PROTOBUF_FILES:=$$(PROTOBUF_FILES:.proto=.pb.cc)
+GEN_PROTOBUF_HEADER_FILES:=$$(PROTOBUF_FILES:.proto=.pb.h)
+
+#ADD PROTOBUF FILES TO MAIL GENERATED FILE LIST
+GEN_SRC_CXX_FILES:=$$(GEN_SRC_CXX_FILES) $$(GEN_PROTOBUF_FILES)
+GEN_SRC_HEADER_FILES:=$$(GEN_SRC_HEADER_FILES) $$(GEN_PROTOBUF_HEADER_FILES)
+
+#GENERATED_TARGETS SPANS ALL BUILD UNITS
+GENERATED_TARGETS:=$$(GENERATED_TARGETS) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) $$(GEN_SRC_HEADER_FILES)
+.PRECIOUS: $$(GENERATED_TARGETS)
 
 #Identify all object files that need to be created based on the source files
-SRC_OBJ_FILES := $$(SRC_FILES) $$(GEN_SRC_FILES)
+SRC_OBJ_FILES := $$(SRC_FILES) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) 
 SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cc=.o)
 SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cp=.o)
 SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cxx=.o)
@@ -851,8 +935,8 @@ ifneq ($$(strip $$(SRC_CXX_FILES)),)
 LD=$$(LDXX)
 endif
 
-ifneq ($$(strip $$(GEN_SRC_FILES)),)
-$$(eval $$(call clean_generated_files_rule, $$(SRC_BASE_DIR),  $$(GEN_SRC_FILES) $$(GEN_SRC_HEADER_FILES) ) )
+ifneq ($$(strip $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES)),)
+$$(eval $$(call clean_generated_files_rule, $$(SRC_DIR), $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) $$(GEN_SRC_HEADER_FILES)) )
 endif
 
 ifneq ($$(UNIT_TEST),NONE)
@@ -887,7 +971,7 @@ endif
 
 
 ################################################################################
-#                                CCP CHECK TARGET                              #
+#                                CPP CHECK TARGET                              #
 ################################################################################
 
 $$(eval $$(call cppcheck_rules,$$(MY_LIB_NAME),        \
@@ -927,15 +1011,28 @@ $$(eval $$(call clang_format_rules, $$(MY_LIB_NAME)-test, \
                                     $$(TEST_SRC_FILES)))
 endif
 
-################################################################################
-#                                 LINK RULES                                   #
-################################################################################
-
 ifneq ($$(MAKECMDGOALS),clean)
 ifneq ($$(MAKECMDGOALS),clean-docs)
 ifneq ($$(MAKECMDGOALS),clean-all)
 ifneq ($$(MAKECMDGOALS),format)
 ifneq ($$(MAKECMDGOALS),docs)
+
+
+################################################################################
+#                            CODE GENERATION RULES                             #
+################################################################################
+
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call lex_directory_rules,$$(bdir),$$(MY_LEX_FLAGS))))
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call yacc_directory_rules,$$(bdir),$$(MY_YACC_FLAGS))))
+
+#PROTOBUF GENERATION ALSO GENERATES DEPENDENCIES SO WE NEED OBJS_BASE_DIR
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call protobuf_directory_rules,$$(LIB_OBJ_BASE_DIR),$$(bdir),$$(MY_PROTOC_FLAGS))))
+
+ifneq ($$(MAKECMDGOALS),generate-code)
+
+################################################################################
+#                                 LINK RULES                                   #
+################################################################################
 
 $$(eval $$(call lib_link_rules, $$(TARGET_DIR),$$(MY_LIB_NAME).a,       \
                                 $$(SRC_LIB_OBJ_FILES) $$(MY_EXTERNALS), \
@@ -955,8 +1052,6 @@ endif
 #                                COMPILE RULES                                 #
 ################################################################################
 
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call lex_directory_rules,$$(bdir),$$(MY_LEX_FLAGS))))
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call yacc_directory_rules,$$(bdir),$$(MY_YACC_FLAGS))))
 
 $$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call cpp_directory_rules,$$(LIB_OBJ_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
 $$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call c_directory_rules,$$(LIB_OBJ_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
@@ -973,19 +1068,27 @@ endif
 #                       AUTOMATIC DEPENDENCY GENERATION                        #
 ################################################################################
 
+#PROTO DEPENDENCIES ONLY EXIST IN LIB_OBJ_BASE_DIR -- IT DOESN'T NEED TO EXIST
+#IN BOTH PLACES BECASE IT'S DEPENDENCEIS TO CREATE THE SOURCE FILE -- NOT OBJECT FILE
+-include $$(addprefix $$(LIB_OBJ_BASE_DIR),$$(GEN_PROTOBUF_FILES:.cc=.cc.d))
 
 -include $$(SRC_LIB_OBJ_FILES:.o=.d)
 -include $$(SRC_SO_OBJ_FILES:.o=.d)
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call dependency_rules,$$(LIB_OBJ_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS),$$(MY_CFLAGS))))
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call dependency_rules, $$(SO_OBJ_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS),$$(MY_CFLAGS))))
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call cpp_dependency_rules,$$(LIB_OBJ_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call c_dependency_rules,$$(LIB_OBJ_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
+
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call cpp_dependency_rules, $$(SO_OBJ_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call c_dependency_rules, $$(SO_OBJ_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
 
 ifneq ($$(UNIT_TEST),NONE)
 
 -include $$(TEST_OBJ_FILES:.o=.d)
-$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS),$$(MY_CFLAGS))))
+$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call cpp_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
+$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call c_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
 
 endif
 
+endif
 endif
 endif
 endif
