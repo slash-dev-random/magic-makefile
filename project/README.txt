@@ -18,12 +18,14 @@ The top-level makefile is designed to use the following build targets:
    * run-tests - Run all unit tests
    * analyze - Runs static analysis tools on the project
    * format - Calls clang-format on all source files.
+   * generate-code - Run any/all code generators to produce the coresponding 
+                     source code
    * clean - Cleans intermendiate files and complied applications and tests
    * clean-docs - Cleans generated documents
    * clean-all - Cleans all - docs and build files
 
 Define your build apps & libraries in the make/ directory using the pre-defined
-definitions provided by the makefile.  The makefile provides and app module and
+definitions provided by the makefile.  The makefile provides an app module and
 a library module.  Both modules behave as follows:
    * The base source directory where the makefile looks for source files is the
      src/ directory
@@ -70,9 +72,10 @@ library (.a) as well as a dynamic library (.so):
        libs/ directory.  (See examples below)
     7. Extra linker flags specific to this build item
 
-Below are examples of different projects with different build setups:
+Below are examples of project specs in the make/ folder with different build 
+setups:
 
-* A project with asingle app with no exteral build dependencies within the app
+* A project with a single app with no exteral build dependencies within the app
   itself:
 
 $(eval $(call app, helloWorld,  \
@@ -132,9 +135,31 @@ are output as the lex/yacc file name with the .c(c) and .h extentions appended.
 I.E. parser.l --> lexer.l.{c,h} and lexer.ll --> lexer.ll.{cc,h}
      parser.y --> parser.y.{c,h} and parcer.yy --> parser.yy.{cc,h}
 
+System Prerequisites:
+    This makefile is desiged for GNU/Linux systems.  Obviously is assumes the 
+basic GNU C/C++ development tools are installed.  Execute the following command
+to install:
+    Fedora
+        dnf groupinstall "Development Tools"
+    Ubuntu
+        apt-get install build-essential
+
+If you are making use of the additional features in this makefile you will want
+to install the following:
+    Fedora
+        dnf install clang   (provides clang-format and clang-check)
+        dnf install cppcheck
+        dnf install gtest-devel
+        dnf install cppunit-devel
+        dnf install protobuf-devel
+    Ubuntu
+        apt-get install clang
+        apt-get install cppcheck
+        apt-get install libgtest-dev
+        apt-get install libcppunit-dev
+        apt-get install libprotobuf-dev
 
 Future Development:
-   * Add support for more code generation tools (e.g. protoBuf, ...)
    * Add support for building RPM and DEB packages
    * Add configuration to llow profiling using gprof and/or gcov
 
