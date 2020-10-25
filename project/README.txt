@@ -50,10 +50,10 @@ The app module takes 6 parameters:
        project be sure to use the TARGET_DIR variable (see examples below). When
        a library that is outside the build system is used, place it in the libs/
        directory and use the EXT_LIB_DIR variable (see example below)
-    5. Extra include directories not under the app's directory, whether its a 
-       library within the project or an external libary's header file in the
-       libs/ directory.  (See examples below)
-    6. Extra linker flags specific to this build item (e.g. -l pthread)
+    5. App specific compiler flas (I.E. Extra include directories not under the
+       app's directory, whether its a library within the project or an external
+       libary's header file in the libs/ directory. See examples below)
+    6. Extra linker flags specific to this build app (e.g. -l pthread)
 
 The library module takes 7 parameters.  The library module will build a static
 library (.a) as well as a dynamic library (.so):
@@ -67,10 +67,10 @@ library (.a) as well as a dynamic library (.so):
        project be sure to use the TARGET_DIR variable (see examples below). When
        a library that is outside the build system is used, place it in the libs/
        directory and use the EXT_LIB_DIR variable (see example below)
-    6. Extra include directories not under the app's directory, whether its a 
-       library within the project or an external libary's header file in the
-       libs/ directory.  (See examples below)
-    7. Extra linker flags specific to this build item
+    5. Library specific compiler flas (I.E. Extra include directories not under
+       the app's directory, whether its a library within the project or an 
+       external libary's header file in the libs/ directory. See examples below)
+    7. Extra linker flags specific to this build library
 
 Below are examples of project specs in the make/ folder with different build 
 setups:
@@ -102,7 +102,6 @@ $(eval $(call library, libexample,     \
                        ,               \
                         ))
 
-
 * A project that uses an system intalled library (pthread in this case)
 
 $(eval $(call app, threadApp,     \
@@ -132,13 +131,13 @@ are generated into a C++ parser.
 IMPORTANT:
    Generated file name deviate from the standard naming convention and instead
 are output as the lex/yacc file name with the .c(c) and .h extentions appended.
-I.E. parser.l --> lexer.l.{c,h} and lexer.ll --> lexer.ll.{cc,h}
+I.E. lexer.l --> lexer.l.{c,h} and lexer.ll --> lexer.ll.{cc,h}
      parser.y --> parser.y.{c,h} and parcer.yy --> parser.yy.{cc,h}
 
 System Prerequisites:
     This makefile is desiged for GNU/Linux systems.  Obviously is assumes the 
 basic GNU C/C++ development tools are installed.  Execute the following command
-to install:
+to install them:
     Fedora
         dnf groupinstall "Development Tools"
     Ubuntu

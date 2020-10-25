@@ -7,6 +7,10 @@
 #                                                                              #
 ################################################################################
 
+
+#1 - DEST OBJECT FILE
+#2 - SRC OBJECT FILE
+#3 - OBJCOPY OPTIONS
 define objcopy_rules =
 $(1): $(2)
 	@echo "OBJCOPY  $$(notdir $$@)"
@@ -46,7 +50,7 @@ define clang_format_rules =
 FORMAT_TARGETS:=$$(FORMAT_TARGETS) $(1)-clang-format
 $(1)-clang-format:
 	@echo "CLANG-FORMAT FOR $(1)"
-	@for src in $(2) ; do  \
+	@for src in $(2) ; do                               \
 	    echo "    Formatting: $$$$(basename $$$$src)";  \
 	    clang-format -i "$$$$src";                      \
 	done
@@ -514,7 +518,7 @@ SRC_CXX_FILES:=$$(shell find $$(SRC_DIR) -name *.cc -o  -name *.cp  \
 
 SRC_C_FILES:=$$(shell find $$(SRC_DIR) -name *.c)
 
-SRC_FILES:=$$(SRC_CXX_FILES) $$(SRC_C_FILES)
+
 
 #FIND CODE GENERATION FILES AND GENERATE SOURCE LIST
 
@@ -524,8 +528,8 @@ GEN_SRC_HEADER_FILES:=
 
 
 #YOU SHOULD REALLY ONLY USE .l AND .y FOR C APPLICATIONS AND
-# .ll and .yy FOR CPP APPLICATIONS -- I'M TRYING TO ACCOMIDATE ALL
-#THE FILE EXTENSION VARIATIONS FOR LEX/YACC WHILE SEARCHING THE WEB
+# .ll and .yy FOR CPP APPLICATIONS -- I'M TRYING TO ACCOMMODATE ALL
+#THE FILE EXTENSION VARIATIONS FOUND FOR LEX/YACC WHILE SEARCHING THE WEB
 LEX_YACC_C_FILES:=$$(shell find $$(SRC_DIR) -name *.l      -o -name *.lex    \
                                          -o -name *.flex   -o -name *.y      \
                                          -o -name *.Y)
@@ -578,6 +582,12 @@ GEN_SRC_HEADER_FILES:=$$(GEN_SRC_HEADER_FILES) $$(GEN_PROTOBUF_HEADER_FILES)
 GENERATED_TARGETS:=$$(GENERATED_TARGETS) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) $$(GEN_SRC_HEADER_FILES)
 .PRECIOUS: $$(GENERATED_TARGETS)
 
+#REMOVE GEN_SRC_CXX_FILES AND GEN_SRC_C_FILES FROM SRC_FILES
+SRC_CXX_FILES:=$$(filter-out $$(GEN_SRC_CXX_FILES), $$(SRC_CXX_FILES))
+SRC_C_FILES:=$$(filter-out $$(GEN_SRC_C_FILES), $$(SRC_C_FILES))
+
+SRC_FILES:=$$(SRC_CXX_FILES) $$(SRC_C_FILES)
+
 #Identify all object files that need to be created based on the source files
 SRC_OBJ_FILES := $$(addprefix $$(OBJS_BASE_DIR),$$(SRC_FILES) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES))
 SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cc=.o)
@@ -599,7 +609,7 @@ $$(eval $$(call clean_generated_files_rule, $$(SRC_DIR), $$(GEN_SRC_C_FILES) $$(
 endif
 
 
-##IF UNIT_TEST
+#IF UNIT_TEST
 ifneq ($$(UNIT_TEST),NONE)
 
 $$(shell mkdir -p "$$(TEST_SRC_DIR)")
@@ -854,15 +864,13 @@ SRC_CXX_FILES := $$(shell find $$(SRC_DIR) -name *.cc -o  -name *.cp  \
 
 SRC_C_FILES := $$(shell find $$(SRC_DIR) -name *.c)
 
-SRC_FILES := $$(SRC_CXX_FILES) $$(SRC_C_FILES)
-
 GEN_SRC_C_FILES:=
 GEN_SRC_CXX_FILES:=
 GEN_SRC_HEADER_FILES:=
 
 #YOU SHOULD REALLY ONLY USE .l AND .y FOR C APPLICATIONS AND
-# .ll and .yy FOR CPP APPLICATIONS -- I'M TRYING TO ACCOMIDATE ALL
-#THE FILE EXTENSION VARIATIONS FOR LEX/YACC WHILE SEARCHING THE WEB
+# .ll and .yy FOR CPP APPLICATIONS -- I'M TRYING TO ACCOMMODATE ALL
+#THE FILE EXTENSION VARIATIONS FOUND FOR LEX/YACC WHILE SEARCHING THE WEB
 LEX_YACC_C_FILES:=$$(shell find $$(SRC_DIR) -name *.l      -o -name *.lex    \
                                          -o -name *.flex   -o -name *.y      \
                                          -o -name *.Y)
@@ -914,6 +922,14 @@ GEN_SRC_HEADER_FILES:=$$(GEN_SRC_HEADER_FILES) $$(GEN_PROTOBUF_HEADER_FILES)
 #GENERATED_TARGETS SPANS ALL BUILD UNITS
 GENERATED_TARGETS:=$$(GENERATED_TARGETS) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) $$(GEN_SRC_HEADER_FILES)
 .PRECIOUS: $$(GENERATED_TARGETS)
+
+#REMOVE GEN_SRC_CXX_FILES AND GEN_SRC_C_FILES FROM SRC_FILES
+SRC_CXX_FILES:=$$(filter-out $$(GEN_SRC_CXX_FILES), $$(SRC_CXX_FILES))
+SRC_C_FILES:=$$(filter-out $$(GEN_SRC_C_FILES), $$(SRC_C_FILES))
+
+
+SRC_FILES:=$$(SRC_CXX_FILES) $$(SRC_C_FILES)
+
 
 #Identify all object files that need to be created based on the source files
 SRC_OBJ_FILES := $$(SRC_FILES) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) 
