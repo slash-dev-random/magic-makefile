@@ -3,7 +3,7 @@
 # Basic C/C++ Makefile Rules for Linux                                         #
 # Author: Benjamin Cox                                                         #
 # License: CC0 1.0 Universal Licence                                           #
-# Version 1.2                                                                  #
+# Version 1.2.1                                                                #
 #                                                                              #
 ################################################################################
 
@@ -333,7 +333,7 @@ define protobuf_directory_rules =
 #PROTOBUF OUTPUTS CC, H & DEPENDENCIES FILES SIMULANEOUSLY
 $(2)%.pb.cc $(2)%.pb.h: $(2)%.proto
 	@echo "PROTOC   $$<"
-	@$$(PROTOC) $(3) -I=$(2) -I=$$(SRC_DIR) --cpp_out=$$(dir $$@) --dependency_out=$(1)$$@.d $$<
+	@$$(PROTOC) $(3) -I=$(2) -I=$$(SRC_DIR) --cpp_out=$$(dir $$@) --dependency_out=$(1)$$<.d $$<
 
 endef
 
@@ -436,426 +436,51 @@ $$(eval $$(call doxygen_rules, $$(DOCS_DIR), $$(SRC_BASE_DIR), $(1), $(2), $(3) 
 
 endef
 
-################################################################################
-#                            APPLICATION TEMPLATE                              #
-################################################################################
 
-# VARIABLE PRECONDITIONS
-# SRC_BASE_DIR
-# TEST_BASE_DIR
-# OBJS_BASE_DIR
-
-#1 - APP NAME
-#2 - ADD DIR (relative to src)
-#3 - UNIT TEST (GTEST, CPPUNIT, NONE)
-#4 - EXTERNAL LIBRARIES
-#5 - APP COMPILER FLAGS (e.g. EXTRA INCLUDE DIRECTORIES)
-#6 - APP SPECIFIC LD FLAGS
-define app =
-
-APP_NAME:=$(1)
-APP_DIR:=$(2)
-UNIT_TEST:=$(3)
-MY_EXTERNALS:=$(4)
-MY_COMPILE_FLAGS:=$(5)
-MY_LDFLAGS:=$(6)
-
-SRC_MAIN_FUNC_SRC_FILE:=$$(APP_NAME).cpp
-
-ifneq ($$(strip $$(APP_DIR)),)
-APP_DIR:=$$(APP_DIR)/
-endif
-
-
-################################################################################
-
-#BASE DIRECTORIES DEFINED IN MAIN MAKEFILE
-#SRC_BASE_DIR = src/
-#TEST_BASE_DIR = test/
-#LIB_DIR = libs/
-#CUSTOM_MAKE_DIR = make/
-#CONFIG_DIR = config/
-#BUILD_BASE_DIR = build/
-
-#BUILD_DIR = $(BUILD_BASE_DIR)$(CONFIG)/
-#TARGET_DIR = $(BUILD_DIR)$(shell uname -s)-$(shell arch)/
-#OBJS_BASE_DIR = $(TARGET_DIR)objs/
-
-SRC_DIR:=$$(SRC_BASE_DIR)$$(APP_DIR)
-TEST_SRC_DIR:=$$(TEST_BASE_DIR)$$(APP_DIR)
-
-MY_CFLAGS:=$$(CFLAGS) -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)
-MY_CXXFLAGS:=$$(CXXFLAGS) -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)
-
-MY_LDFLAGS:=$$(LDFLAGS) $$(MY_LDFLAGS)
-
-MY_LEX_FLAGS:=$$(LEX_FLAGS) $$(MY_LEX_FLAGS)
-
-MY_CPPCHECK_FLAGS:= -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)                   \
-                    --enable=warning --enable=style --enable=performance  \
-                    --enable=portability --suppress=unusedFunction  -q 
-
-ifeq ($$(UNIT_TEST),GTEST)
-MY_TEST_LDFLAGS:=$$(MY_LDFLAGS) -l gtest -l gtest_main -l pthread 
-endif
-
-ifeq ($$(UNIT_TEST),CPPUNIT)
-MY_TEST_LDFLAGS:=$$(MY_LDFLAGS) -l cppunit 
-endif
-
-$$(shell mkdir -p "$$(SRC_DIR)")
-
-SRC_DIRS:= $$(shell find $$(SRC_DIR) -type d)
-OBJ_DIRS:=$$(addprefix $$(OBJS_BASE_DIR),$$(SRC_DIRS))
-
-$$(shell mkdir -p $$(OBJ_DIRS))
-
-
-SRC_CXX_FILES:=$$(shell find $$(SRC_DIR) -name *.cc -o  -name *.cp  \
-                                      -o -name *.cxx -o -name *.cpp \
-                                      -o -name *.CPP -o -name *.c++ \
-                                      -o -name *.C)
-
-SRC_C_FILES:=$$(shell find $$(SRC_DIR) -name *.c)
-
-
-
-#FIND CODE GENERATION FILES AND GENERATE SOURCE LIST
-
-GEN_SRC_C_FILES:=
-GEN_SRC_CXX_FILES:=
-GEN_SRC_HEADER_FILES:=
-
-
-#YOU SHOULD REALLY ONLY USE .l AND .y FOR C APPLICATIONS AND
-# .ll and .yy FOR CPP APPLICATIONS -- I'M TRYING TO ACCOMMODATE ALL
-#THE FILE EXTENSION VARIATIONS FOUND FOR LEX/YACC WHILE SEARCHING THE WEB
-LEX_YACC_C_FILES:=$$(shell find $$(SRC_DIR) -name *.l      -o -name *.lex    \
-                                         -o -name *.flex   -o -name *.y      \
-                                         -o -name *.Y)
-
-LEX_YACC_CXX_FILES:=$$(shell find $$(SRC_DIR) -name *.ll     -o -name *.l++     \
-                                           -o -name *.lex++  -o -name *.flex++  \
-                                           -o -name *.lpp    -o -name *.lexpp   \
-                                           -o -name *.flexpp -o -name *.yy      \
-                                           -o -name *.YY     -o -name *.ypp     \
-                                           -o -name *.YPP    -o -name *.y++     \
-                                           -o -name *.Y++   )
-
-GEN_LEX_YACC_C_FILES:=$$(LEX_YACC_C_FILES)
-GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.l=.l.c)
-GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.lex=.lex.c)
-GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.flex=.flex.c)
-GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.y=.y.c)
-GEN_LEX_YACC_C_FILES:=$$(GEN_LEX_YACC_C_FILES:.Y=.Y.c)
-
-GEN_LEX_YACC_CXX_FILES:=$$(LEX_YACC_CXX_FILES:.ll=.ll.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.l++=.l++.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.lex++=.lex++.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.flex++=.flex++.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.lpp=.lpp.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.lexpp=.lexpp.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.flexpp=.flexpp.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.yy=.yy.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.YY=.YY.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.y++=.y++.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.Y++=.Y++.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.ypp=.ypp.cc)
-GEN_LEX_YACC_CXX_FILES:=$$(GEN_LEX_YACC_CXX_FILES:.YPP=.YPP.cc)
-
-GEN_LEX_YACC_HEADER_FILES:=$$(GEN_LEX_YACC_C_FILES:.c=.h) $$(GEN_LEX_YACC_CXX_FILES:.cc=.h)
-
-#ADD LEX/YACC FILES TO THE MAIN GENERATED FILE LIST
-GEN_SRC_C_FILES:=$$(GEN_SRC_C_FILES) $$(GEN_LEX_YACC_C_FILES)
-GEN_SRC_CXX_FILES:=$$(GEN_SRC_CXX_FILES) $$(GEN_LEX_YACC_CXX_FILES)
-GEN_SRC_HEADER_FILES:=$$(GEN_SRC_HEADER_FILES) $$(GEN_LEX_YACC_HEADER_FILES)
-
-PROTOBUF_FILES:=$$(shell find $$(SRC_DIR) -name *.proto)
-GEN_PROTOBUF_FILES:=$$(PROTOBUF_FILES:.proto=.pb.cc)
-GEN_PROTOBUF_HEADER_FILES:=$$(PROTOBUF_FILES:.proto=.pb.h)
-
-#ADD PROTOBUF FILES TO MAIL GENERATED FILE LIST
-GEN_SRC_CXX_FILES:=$$(GEN_SRC_CXX_FILES) $$(GEN_PROTOBUF_FILES)
-GEN_SRC_HEADER_FILES:=$$(GEN_SRC_HEADER_FILES) $$(GEN_PROTOBUF_HEADER_FILES)
-
-#GENERATED_TARGETS SPANS ALL BUILD UNITS
-GENERATED_TARGETS:=$$(GENERATED_TARGETS) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) $$(GEN_SRC_HEADER_FILES)
-.PRECIOUS: $$(GENERATED_TARGETS)
-
-#REMOVE GEN_SRC_CXX_FILES AND GEN_SRC_C_FILES FROM SRC_FILES
-SRC_CXX_FILES:=$$(filter-out $$(GEN_SRC_CXX_FILES), $$(SRC_CXX_FILES))
-SRC_C_FILES:=$$(filter-out $$(GEN_SRC_C_FILES), $$(SRC_C_FILES))
-
-SRC_FILES:=$$(SRC_CXX_FILES) $$(SRC_C_FILES)
-
-#Identify all object files that need to be created based on the source files
-SRC_OBJ_FILES := $$(addprefix $$(OBJS_BASE_DIR),$$(SRC_FILES) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES))
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cc=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cp=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cxx=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cpp=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.CPP=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.c++=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.C=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.c=.o)
-
-#USE g++ to link if there are C++ files present
-ifneq ($$(strip $$(SRC_CXX_FILES) $$(GEN_SRC_CXX_FILES)),)
-LD=$$(LDXX)
-endif
-
-ifneq ($$(strip $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES)),)
-$$(eval $$(call clean_generated_files_rule, $$(SRC_DIR), $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) $$(GEN_SRC_HEADER_FILES)) )
-endif
-
-
-#IF UNIT_TEST
-ifneq ($$(UNIT_TEST),NONE)
-
-$$(shell mkdir -p "$$(TEST_SRC_DIR)")
-
-TEST_DIRS:= $$(shell find $$(TEST_SRC_DIR) -type d)
-TEST_OBJS_DIRS:= $$(addprefix $$(OBJS_BASE_DIR),$$(TEST_DIRS))
-
-$$(shell mkdir -p $$(TEST_OBJS_DIRS))
-
-TEST_CXX_FILES := $$(shell find $$(TEST_SRC_DIR) -name *.cc -o  -name *.cp  \
-                                              -o -name *.cxx -o -name *.cpp \
-                                              -o -name *.CPP -o -name *.c++ \
-                                              -o -name *.C)
-
-TEST_C_FILES := $$(shell find $$(TEST_SRC_DIR) -name *.c)
-
-TEST_SRC_FILES := $$(TEST_CXX_FILES) $$(TEST_C_FILES)
-
-TEST_OBJ_FILES := $$(addprefix $$(OBJS_BASE_DIR),$$(TEST_SRC_FILES))
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.cc=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.cp=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.cxx=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.cpp=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.CPP=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.c++=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.C=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.c=.o)
-
-TEST_SRC_OBJ_FILES := $$(SRC_OBJ_FILES)
-
-SRC_MAIN_FUNC_SRC_FILE := $$(SRC_BASE_DIR)$$(APP_DIR)$$(SRC_MAIN_FUNC_SRC_FILE)
-SRC_MAIN_FUNC_OBJ_FILE := $$(OBJS_BASE_DIR)$$(SRC_MAIN_FUNC_SRC_FILE)
-
-SRC_MAIN_FUNC_OBJ_FILE := $$(SRC_MAIN_FUNC_OBJ_FILE:.cc=.o)
-SRC_MAIN_FUNC_OBJ_FILE := $$(SRC_MAIN_FUNC_OBJ_FILE:.cp=.o)
-SRC_MAIN_FUNC_OBJ_FILE := $$(SRC_MAIN_FUNC_OBJ_FILE:.cxx=.o)
-SRC_MAIN_FUNC_OBJ_FILE := $$(SRC_MAIN_FUNC_OBJ_FILE:.cpp=.o)
-SRC_MAIN_FUNC_OBJ_FILE := $$(SRC_MAIN_FUNC_OBJ_FILE:.CPP=.o)
-SRC_MAIN_FUNC_OBJ_FILE := $$(SRC_MAIN_FUNC_OBJ_FILE:.c++=.o)
-SRC_MAIN_FUNC_OBJ_FILE := $$(SRC_MAIN_FUNC_OBJ_FILE:.C=.o)
-SRC_MAIN_FUNC_OBJ_FILE := $$(SRC_MAIN_FUNC_OBJ_FILE:.c=.o)
-
-TEST_SRC_OBJ_FILES := $$(filter-out $$(SRC_MAIN_FUNC_OBJ_FILE), \
-                                    $$(TEST_SRC_OBJ_FILES))
-
-TEST_MAIN_FUNC_OBJ_FILE := $$(SRC_MAIN_FUNC_OBJ_FILE:.o=-app_main.o)
-TEST_SRC_OBJ_FILES := $$(TEST_SRC_OBJ_FILES) $$(TEST_MAIN_FUNC_OBJ_FILE)
-
-$$(eval $$(call objcopy_rules,$$(TEST_MAIN_FUNC_OBJ_FILE),    \
-                              $$(SRC_MAIN_FUNC_OBJ_FILE),     \
-                              --redefine-sym main=app_main))
-
-endif
-
-################################################################################
-#                                CPP CHECK TARGET                              #
-################################################################################
-
-$$(eval $$(call cppcheck_rules, $$(APP_NAME),          \
-                                $$(MY_CPPCHECK_FLAGS), \
-                                $$(SRC_DIR)))
-
-ifneq ($$(UNIT_TEST),NONE)
-$$(eval $$(call cppcheck_rules, $$(APP_NAME)-test,     \
-                                $$(MY_CPPCHECK_FLAGS), \
-                                $$(TEST_SRC_DIR)))
-endif
-
-################################################################################
-#                               CLANG-CHECK TARGET                             #
-################################################################################
-
-$$(eval $$(call clang_check_rules, $$(APP_NAME),      \
-                                   $$(SRC_FILES),     \
-                                   $$(MY_CXXFLAGS)))
-
-ifneq ($$(UNIT_TEST),NONE)
-$$(eval $$(call clang_check_rules, $$(APP_NAME)-test,      \
-                                   $$(TEST_SRC_FILES),     \
-                                   $$(MY_CXXFLAGS)))
-endif
-
-################################################################################
-#                               CLANG-FORMAT TARGET                            #
-################################################################################
-
-$$(eval $$(call clang_format_rules, $$(APP_NAME),  \
-                                    $$(SRC_FILES)))
-
-ifneq ($$(UNIT_TEST),NONE)
-$$(eval $$(call clang_format_rules, $$(APP_NAME)-test,  \
-                                    $$(TEST_SRC_FILES)))
-endif
-
-
-ifneq ($$(MAKECMDGOALS),clean)
-ifneq ($$(MAKECMDGOALS),clean-docs)
-ifneq ($$(MAKECMDGOALS),clean-all)
-ifneq ($$(MAKECMDGOALS),format)
-ifneq ($$(MAKECMDGOALS),docs)
-
-################################################################################
-#                            CODE GENERATION RULES                             #
-################################################################################
-
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call lex_directory_rules,$$(bdir),$$(MY_LEX_FLAGS))))
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call yacc_directory_rules,$$(bdir),$$(MY_YACC_FLAGS))))
-
-#PROTOBUF GENERATION ALSO GENERATES DEPENDENCIES SO WE NEED OBJS_BASE_DIR
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call protobuf_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_PROTOC_FLAGS))))
-
-
-ifneq ($$(MAKECMDGOALS),generate-code)
-
-################################################################################
-#                                 LINK RULES                                   #
-################################################################################
-
-$$(eval $$(call std_link_rules,$$(TARGET_DIR),$$(APP_NAME),        \
-                               $$(SRC_OBJ_FILES) $$(MY_EXTERNALS), \
-                               $$(MY_LDFLAGS)))
-
-ifneq ($$(UNIT_TEST),NONE)
-$$(eval $$(call test_link_rules,$$(TARGET_DIR),$$(APP_NAME)-test,                           \
-                                $$(TEST_SRC_OBJ_FILES) $$(TEST_OBJ_FILES) $$(MY_EXTERNALS), \
-                                $$(MY_TEST_LDFLAGS)))
-endif
-
-################################################################################
-#                                COMPILE RULES                                 #
-################################################################################
-
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call cpp_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call c_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
-
-
-ifneq ($$(UNIT_TEST),NONE)
-$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call cpp_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
-$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call c_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
-endif
-
-################################################################################
-#                       AUTOMATIC DEPENDENCY GENERATION                        #
-################################################################################
-
--include $$(addprefix $$(LIB_OBJ_BASE_DIR),$$(GEN_PROTOBUF_FILES:.cc=.cc.d))
-
--include $$(SRC_OBJ_FILES:.o=.d)
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call cpp_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
-$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call c_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
-
-ifneq ($$(UNIT_TEST),NONE)
--include $$(TEST_OBJ_FILES:.o=.d)
-$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call cpp_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
-$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call c_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
-endif
-
-
-endif
-endif
-endif
-endif
-endif
-endif
+#1 - DESTINATION VARIALBE NAME
+#2 - OBJECT BASE DIRECTORY
+#3 - SOURCE FILES
+define srcToObj =
+
+$(1):=$$(addprefix $(2), $$(patsubst %.cc,%.o,        \
+                         $$(patsubst %.cp,%.o,        \
+                         $$(patsubst %.cxx,%.o,       \
+                         $$(patsubst %.cpp,%.o,       \
+                         $$(patsubst %.CPP,%.o,       \
+                         $$(patsubst %.c++,%.o,       \
+                         $$(patsubst %.C,%.o,         \
+                         $$(patsubst %.c,%.o, $(3))))))))))
 
 endef
 
 
-################################################################################
-#                              LIBRARY TEMPLATE                                #
-################################################################################
-
-# VARIABLE PRECONDITIONS
-# SRC_BASE_DIR
-# TEST_BASE_DIR
-# OBJS_BASE_DIR
-
-#1 - LIBRARY NAME
-#2 - ADD DIR (relative to src)
-#3 - VERSION (CURRENT.REVISION.AGE)
-#4 - UNIT TEST (GTEST, CPPUNIT, NONE)
-#5 - EXTERNAL LIBRARIES
-#6 - LIBRARY COMPILER FLAGS (e.g. EXTRA INCLUDE DIRECTORIES)
-#7 - LIBRARY SPECIFIC LD FLAGS
-define library =
-
-MY_LIB_NAME:=$(1)
-MY_LIB_DIR:=$(2)
-VERSION:=$(3)
-UNIT_TEST:=$(4)
-MY_EXTERNALS:=$(5)
-MY_COMPILE_FLAGS:=$(6)
-MY_LDFLAGS:=$(7)
-
-ifneq ($$(strip $$(MY_LIB_DIR)),)
-MY_LIB_DIR:=$$(MY_LIB_DIR)/
-endif
-
-################################################################################
-
-#BASE DIRECTORIES DEFINED IN MAIN MAKEFILE
-#SRC_BASE_DIR = src/
-#TEST_BASE_DIR = test/
-#LIB_DIR = libs/
-#CUSTOM_MAKE_DIR = make/
-#CONFIG_DIR = config/
-#BUILD_BASE_DIR = build/
-
-
-SRC_DIR:=$$(SRC_BASE_DIR)$$(MY_LIB_DIR)
-TEST_SRC_DIR:=$$(TEST_BASE_DIR)$$(MY_LIB_DIR)
-
-MY_CFLAGS := $$(CFLAGS) -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)
-MY_CXXFLAGS := $$(CXXFLAGS) -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)
-MY_LDFLAGS:=$$(LDFLAGS) $$(MY_LDFLAGS)
-MY_ARFLAGS:=$$(ARFLAGS)
-
-MY_SO_CFLAGS:=$$(MY_CFLAGS) -fPIC
-MY_SO_CXXFLAGS:=$$(MY_CXX_FLAGS) -fPIC
-MY_SO_LDFLAGS:= $$(LDFLAGS) -shared -Wl,-soname,$$(MY_LIB_NAME).so -ldl
-
-
-MY_CPPCHECK_FLAGS:= -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS) -q                \
-                    --enable=warning --enable=style --enable=performance \
-                    --enable=portability --suppress=unusedFunction 
-
-ifeq ($$(UNIT_TEST),GTEST)
-MY_TEST_LDFLAGS:=$$(MY_LDFLAGS) -l gtest -l gtest_main -l pthread
-endif
-
-ifeq ($$(UNIT_TEST),CPPUNIT)
-MY_TEST_LDFLAGS:=$$(MY_LDFLAGS) -l cppunit
-endif
+#GET ALL THE RELATED SOURCE FILES UNDER THE SOURCE AND TEST DIRECTORIES
+#
+# REQUIRES THE FOLLOWING VARIALBE TO BE SET (THEY ARE NOT PARAMETERS)
+#    SRC_DIR
+#    TEST_SRC_DIR
+#    UNIT TEST (GTEST, CPPUNIT, NONE)
+#
+#SETS THE FOLLOWING VARIABLES:
+#    SRC_DIRS -- ALL SUB DIRECTORIES UNDER SRC_DIR
+#    SRC_CXX_FILES 
+#    SRC_C_FILES
+#    SRC_FILES
+#    
+#    GEN_SRC_C_FILES -- GENERATED C FILES
+#    GEN_SRC_CXX_FILES -- GENERATED CXX FILES
+#    GEN_SRC_HEADER_FILES -- GENERATED HEADER FILES
+#    
+#    TEST_SRC_DIR
+#    TEST_DIRS
+#    TEST_C_FILES
+#    TEST_CXX_FILES
+#    TEST_SRC_FILES
+define getSourceFiles =
 
 $$(shell mkdir -p "$$(SRC_DIR)")
 
 SRC_DIRS := $$(shell find $$(SRC_DIR) -type d)
-
-LIB_OBJ_BASE_DIR:= $$(OBJS_BASE_DIR)lib/
-SO_OBJ_BASE_DIR:= $$(OBJS_BASE_DIR)so/
-
-SRC_LIB_OBJ_DIRS:= $$(addprefix $$(LIB_OBJ_BASE_DIR),$$(SRC_DIRS))
-SRC_SO_OBJ_DIRS:= $$(addprefix $$(SO_OBJ_BASE_DIR),$$(SRC_DIRS))
-
-$$(shell mkdir -p $$(SRC_LIB_OBJ_DIRS))
-$$(shell mkdir -p $$(SRC_SO_OBJ_DIRS))
 
 SRC_CXX_FILES := $$(shell find $$(SRC_DIR) -name *.cc -o  -name *.cp  \
                                         -o -name *.cxx -o -name *.cpp \
@@ -931,23 +556,97 @@ SRC_C_FILES:=$$(filter-out $$(GEN_SRC_C_FILES), $$(SRC_C_FILES))
 SRC_FILES:=$$(SRC_CXX_FILES) $$(SRC_C_FILES)
 
 
-#Identify all object files that need to be created based on the source files
-SRC_OBJ_FILES := $$(SRC_FILES) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) 
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cc=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cp=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cxx=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.cpp=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.CPP=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.c++=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.C=.o)
-SRC_OBJ_FILES := $$(SRC_OBJ_FILES:.c=.o)
+ifneq ($$(UNIT_TEST),NONE)
+
+$$(shell mkdir -p "$$(TEST_SRC_DIR)")
+
+TEST_DIRS:= $$(shell find $$(TEST_SRC_DIR) -type d)
+TEST_CXX_FILES := $$(shell find $$(TEST_SRC_DIR) -name *.cc  -o -name *.cp  \
+                                              -o -name *.cxx -o -name *.cpp \
+                                              -o -name *.CPP -o -name *.c++ \
+                                              -o -name *.C)
+
+TEST_C_FILES := $$(shell find $$(TEST_SRC_DIR) -name *.c)
+TEST_SRC_FILES := $$(TEST_CXX_FILES) $$(TEST_C_FILES)
+
+endif
 
 
-SRC_LIB_OBJ_FILES := $$(addprefix $$(LIB_OBJ_BASE_DIR),$$(SRC_OBJ_FILES))
-SRC_SO_OBJ_FILES := $$(addprefix $$(SO_OBJ_BASE_DIR),$$(SRC_OBJ_FILES))
+endef
+
+
+################################################################################
+#                            APPLICATION TEMPLATE                              #
+################################################################################
+
+# VARIABLE PRECONDITIONS
+# SRC_BASE_DIR
+# TEST_BASE_DIR
+# OBJS_BASE_DIR
+
+#1 - APP NAME
+#2 - ADD DIR (relative to src)
+#3 - UNIT TEST (GTEST, CPPUNIT, NONE)
+#4 - EXTERNAL LIBRARIES
+#5 - APP COMPILER FLAGS (e.g. EXTRA INCLUDE DIRECTORIES)
+#6 - APP SPECIFIC LD FLAGS
+define app =
+
+APP_NAME:=$(1)
+APP_DIR:=$(2)
+UNIT_TEST:=$(3)
+MY_EXTERNALS:=$(4)
+MY_COMPILE_FLAGS:=$(5)
+MY_LDFLAGS:=$(6)
+
+SRC_MAIN_FUNC_SRC_FILE:=$$(APP_NAME).cpp
+
+ifneq ($$(strip $$(APP_DIR)),)
+APP_DIR:=$$(APP_DIR)/
+endif
+
+
+################################################################################
+
+#BASE DIRECTORIES DEFINED IN MAIN MAKEFILE
+#SRC_BASE_DIR = src/
+#TEST_BASE_DIR = test/
+#LIB_DIR = libs/
+#CUSTOM_MAKE_DIR = make/
+#CONFIG_DIR = config/
+#BUILD_BASE_DIR = build/
+
+#BUILD_DIR = $(BUILD_BASE_DIR)$(CONFIG)/
+#TARGET_DIR = $(BUILD_DIR)$(shell uname -s)-$(shell arch)/
+#OBJS_BASE_DIR = $(TARGET_DIR)objs/
+
+
+SRC_DIR:=$$(SRC_BASE_DIR)$$(APP_DIR)
+TEST_SRC_DIR:=$$(TEST_BASE_DIR)$$(APP_DIR)
+
+$$(eval $$(call getSourceFiles))
+
+MY_CFLAGS:=$$(CFLAGS) -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)
+MY_CXXFLAGS:=$$(CXXFLAGS) -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)
+
+MY_LDFLAGS:=$$(LDFLAGS) $$(MY_LDFLAGS)
+
+MY_LEX_FLAGS:=$$(LEX_FLAGS) $$(MY_LEX_FLAGS)
+
+MY_CPPCHECK_FLAGS:= -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)                   \
+                    --enable=warning --enable=style --enable=performance  \
+                    --enable=portability --suppress=unusedFunction  -q 
+
+ifeq ($$(UNIT_TEST),GTEST)
+MY_TEST_LDFLAGS:=$$(MY_LDFLAGS) -l gtest -l gtest_main -l pthread 
+endif
+
+ifeq ($$(UNIT_TEST),CPPUNIT)
+MY_TEST_LDFLAGS:=$$(MY_LDFLAGS) -l cppunit 
+endif
 
 #USE g++ to link if there are C++ files present
-ifneq ($$(strip $$(SRC_CXX_FILES)),)
+ifneq ($$(strip $$(SRC_CXX_FILES) $$(GEN_SRC_CXX_FILES)),)
 LD=$$(LDXX)
 endif
 
@@ -955,36 +654,250 @@ ifneq ($$(strip $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES)),)
 $$(eval $$(call clean_generated_files_rule, $$(SRC_DIR), $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) $$(GEN_SRC_HEADER_FILES)) )
 endif
 
+ifneq ($$(MAKECMDGOALS),clean)
+ifneq ($$(MAKECMDGOALS),clean-docs)
+ifneq ($$(MAKECMDGOALS),clean-all)
+ifneq ($$(MAKECMDGOALS),docs)
+
+################################################################################
+#                                CPP CHECK TARGET                              #
+################################################################################
+
+$$(eval $$(call cppcheck_rules, $$(APP_NAME),          \
+                                $$(MY_CPPCHECK_FLAGS), \
+                                $$(SRC_DIR)))
+
+ifneq ($$(UNIT_TEST),NONE)
+$$(eval $$(call cppcheck_rules, $$(APP_NAME)-test,     \
+                                $$(MY_CPPCHECK_FLAGS), \
+                                $$(TEST_SRC_DIR)))
+endif
+
+################################################################################
+#                               CLANG-CHECK TARGET                             #
+################################################################################
+
+$$(eval $$(call clang_check_rules, $$(APP_NAME),      \
+                                   $$(SRC_FILES),     \
+                                   $$(MY_CXXFLAGS)))
+
+ifneq ($$(UNIT_TEST),NONE)
+$$(eval $$(call clang_check_rules, $$(APP_NAME)-test,      \
+                                   $$(TEST_SRC_FILES),     \
+                                   $$(MY_CXXFLAGS)))
+endif
+
+ifneq ($$(MAKECMDGOALS),analyze)
+
+################################################################################
+#                               CLANG-FORMAT TARGET                            #
+################################################################################
+
+$$(eval $$(call clang_format_rules, $$(APP_NAME),  \
+                                    $$(SRC_FILES)))
+
+ifneq ($$(UNIT_TEST),NONE)
+$$(eval $$(call clang_format_rules, $$(APP_NAME)-test,  \
+                                    $$(TEST_SRC_FILES)))
+endif
+
+
+ifneq ($$(MAKECMDGOALS),format)
+
+################################################################################
+#                            SETUP BUILD DIRECTORY                             #
+################################################################################
+OBJ_DIRS:=$$(addprefix $$(OBJS_BASE_DIR),$$(SRC_DIRS))
+$$(shell mkdir -p $$(OBJ_DIRS))
+
+#Identify all object files that need to be created based on the source files
+$$(eval $$(call srcToObj, SRC_OBJ_FILES,     \
+                          $$(OBJS_BASE_DIR), \
+						  $$(SRC_FILES) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES)))
+
+
+#IF UNIT_TEST
 ifneq ($$(UNIT_TEST),NONE)
 
-$$(shell mkdir -p "$$(TEST_SRC_DIR)")
-
-TEST_DIRS:= $$(shell find $$(TEST_SRC_DIR) -type d)
+#SETUP TEST BUILD DIRECTORY
 TEST_OBJS_DIRS:= $$(addprefix $$(OBJS_BASE_DIR),$$(TEST_DIRS))
-
 $$(shell mkdir -p $$(TEST_OBJS_DIRS))
 
-TEST_CXX_FILES := $$(shell find $$(TEST_SRC_DIR) -name *.cc  -o -name *.cp  \
-                                              -o -name *.cxx -o -name *.cpp \
-                                              -o -name *.CPP -o -name *.c++ \
-                                              -o -name *.C)
+$$(eval $$(call srcToObj, TEST_OBJ_FILES, $$(OBJS_BASE_DIR),$$(TEST_SRC_FILES)))
 
-TEST_C_FILES := $$(shell find $$(TEST_SRC_DIR) -name *.c)
+TEST_SRC_OBJ_FILES := $$(SRC_OBJ_FILES)
 
-TEST_SRC_FILES := $$(TEST_CXX_FILES) $$(TEST_C_FILES)
+#GENERATE MODIFIED OBJECT FILE THAT CONTAINING THE MAIN() FUNCTION TO PREVENT 
+#THE TEST MAIN AND THE PROGRAM MAIN FROM CONFLICTING
+SRC_MAIN_FUNC_SRC_FILE := $$(SRC_BASE_DIR)$$(APP_DIR)$$(SRC_MAIN_FUNC_SRC_FILE)
+$$(eval $$(call srcToObj, SRC_MAIN_FUNC_OBJ_FILE, $$(OBJS_BASE_DIR),$$(SRC_MAIN_FUNC_SRC_FILE)))
 
-TEST_OBJ_FILES := $$(addprefix $$(OBJS_BASE_DIR),$$(TEST_SRC_FILES))
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.cc=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.cp=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.cxx=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.cpp=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.CPP=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.c++=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.C=.o)
-TEST_OBJ_FILES := $$(TEST_OBJ_FILES:.c=.o)
+#FILTER OUT THE OBJECT FILE CONTAINING THE PROGRAM'S MAIN FUNCTION FROM THE OBJECTS TO LINK THE UNIT TEST WITH
+TEST_SRC_OBJ_FILES := $$(filter-out $$(SRC_MAIN_FUNC_OBJ_FILE), \
+                                    $$(TEST_SRC_OBJ_FILES))
+
+#ADD MODIFIED MAIN FUNCTION OBJECT FILE TO THE OBJECTS TO LINK THE UNIT TEST WITH
+TEST_MAIN_FUNC_OBJ_FILE := $$(SRC_MAIN_FUNC_OBJ_FILE:.o=-app_main.o)
+TEST_SRC_OBJ_FILES := $$(TEST_SRC_OBJ_FILES) $$(TEST_MAIN_FUNC_OBJ_FILE)
+
+#CREATE RULE TO GENERATE THE MODIFIED MAIN FUNCTION OBJECT FILE FROM THE ORIGINAL MAIN FUNCTION OBJECT FILE
+$$(eval $$(call objcopy_rules,$$(TEST_MAIN_FUNC_OBJ_FILE),    \
+                              $$(SRC_MAIN_FUNC_OBJ_FILE),     \
+                              --redefine-sym main=app_main))
 
 endif
 
+################################################################################
+#                            CODE GENERATION RULES                             #
+################################################################################
+
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call lex_directory_rules,$$(bdir),$$(MY_LEX_FLAGS))))
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call yacc_directory_rules,$$(bdir),$$(MY_YACC_FLAGS))))
+
+#PROTOBUF GENERATION ALSO GENERATES DEPENDENCIES SO WE NEED OBJS_BASE_DIR
+$$(foreach bdir,$$(SRC_DIRS),                                      \
+    $$(eval $$(call protobuf_directory_rules,$$(OBJS_BASE_DIR),    \
+	                                         $$(bdir),             \
+											 $$(MY_PROTOC_FLAGS))))
+
+
+ifneq ($$(MAKECMDGOALS),generate-code)
+
+################################################################################
+#                                 LINK RULES                                   #
+################################################################################
+
+$$(eval $$(call std_link_rules,$$(TARGET_DIR),$$(APP_NAME),        \
+                               $$(SRC_OBJ_FILES) $$(MY_EXTERNALS), \
+                               $$(MY_LDFLAGS)))
+
+ifneq ($$(UNIT_TEST),NONE)
+$$(eval $$(call test_link_rules,$$(TARGET_DIR),$$(APP_NAME)-test,                           \
+                                $$(TEST_SRC_OBJ_FILES) $$(TEST_OBJ_FILES) $$(MY_EXTERNALS), \
+                                $$(MY_TEST_LDFLAGS)))
+endif
+
+################################################################################
+#                                COMPILE RULES                                 #
+################################################################################
+
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call cpp_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call c_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
+
+
+ifneq ($$(UNIT_TEST),NONE)
+$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call cpp_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
+$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call c_directory_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
+endif
+
+################################################################################
+#                       AUTOMATIC DEPENDENCY GENERATION                        #
+################################################################################
+
+-include $$(addprefix $$(OBJ_BASE_DIR),$$(PROTOBUF_FILES:.proto=.proto.d))
+
+-include $$(SRC_OBJ_FILES:.o=.d)
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call cpp_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
+$$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call c_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
+
+ifneq ($$(UNIT_TEST),NONE)
+-include $$(TEST_OBJ_FILES:.o=.d)
+$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call cpp_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
+$$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call c_dependency_rules,$$(OBJS_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
+endif
+
+
+endif
+endif
+endif
+endif
+endif
+endif
+endif
+
+endef
+
+
+################################################################################
+#                              LIBRARY TEMPLATE                                #
+################################################################################
+
+# VARIABLE PRECONDITIONS
+# SRC_BASE_DIR
+# TEST_BASE_DIR
+# OBJS_BASE_DIR
+
+#1 - LIBRARY NAME
+#2 - ADD DIR (relative to src)
+#3 - VERSION (CURRENT.REVISION.AGE)
+#4 - UNIT TEST (GTEST, CPPUNIT, NONE)
+#5 - EXTERNAL LIBRARIES
+#6 - LIBRARY COMPILER FLAGS (e.g. EXTRA INCLUDE DIRECTORIES)
+#7 - LIBRARY SPECIFIC LD FLAGS
+define library =
+
+MY_LIB_NAME:=$(1)
+MY_LIB_DIR:=$(2)
+VERSION:=$(3)
+UNIT_TEST:=$(4)
+MY_EXTERNALS:=$(5)
+MY_COMPILE_FLAGS:=$(6)
+MY_LDFLAGS:=$(7)
+
+ifneq ($$(strip $$(MY_LIB_DIR)),)
+MY_LIB_DIR:=$$(MY_LIB_DIR)/
+endif
+
+################################################################################
+
+#BASE DIRECTORIES DEFINED IN MAIN MAKEFILE
+#SRC_BASE_DIR = src/
+#TEST_BASE_DIR = test/
+#LIB_DIR = libs/
+#CUSTOM_MAKE_DIR = make/
+#CONFIG_DIR = config/
+#BUILD_BASE_DIR = build/
+
+SRC_DIR:=$$(SRC_BASE_DIR)$$(MY_LIB_DIR)
+TEST_SRC_DIR:=$$(TEST_BASE_DIR)$$(MY_LIB_DIR)
+
+$$(eval $$(call getSourceFiles))
+
+MY_CFLAGS := $$(CFLAGS) -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)
+MY_CXXFLAGS := $$(CXXFLAGS) -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS)
+MY_LDFLAGS:=$$(LDFLAGS) $$(MY_LDFLAGS)
+MY_ARFLAGS:=$$(ARFLAGS)
+
+MY_SO_CFLAGS:=$$(MY_CFLAGS) -fPIC
+MY_SO_CXXFLAGS:=$$(MY_CXX_FLAGS) -fPIC
+MY_SO_LDFLAGS:= $$(MY_LDFLAGS) -shared -Wl,-soname,$$(MY_LIB_NAME).so -ldl
+
+
+MY_CPPCHECK_FLAGS:= -I $$(SRC_DIR) $$(MY_COMPILE_FLAGS) -q                \
+                    --enable=warning --enable=style --enable=performance \
+                    --enable=portability --suppress=unusedFunction 
+
+#USE g++ to link if there are C++ files present
+ifeq ($$(UNIT_TEST),GTEST)
+MY_TEST_LDFLAGS:=$$(MY_LDFLAGS) -l gtest -l gtest_main -l pthread
+endif
+
+ifeq ($$(UNIT_TEST),CPPUNIT)
+MY_TEST_LDFLAGS:=$$(MY_LDFLAGS) -l cppunit
+endif
+
+ifneq ($$(strip $$(SRC_CXX_FILES) $$(GEN_SRC_CXX_FILES)),)
+LD=$$(LDXX)
+endif
+
+ifneq ($$(strip $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES)),)
+$$(eval $$(call clean_generated_files_rule, $$(SRC_DIR), $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES) $$(GEN_SRC_HEADER_FILES)) )
+endif
+
+ifneq ($$(MAKECMDGOALS),clean)
+ifneq ($$(MAKECMDGOALS),clean-docs)
+ifneq ($$(MAKECMDGOALS),clean-all)
+ifneq ($$(MAKECMDGOALS),docs)
 
 ################################################################################
 #                                CPP CHECK TARGET                              #
@@ -1015,6 +928,8 @@ $$(eval $$(call clang_check_rules, $$(MY_LIB_NAME)-test,   \
                                    $$(MY_CXXFLAGS)))
 endif
 
+ifneq ($$(MAKECMDGOALS),analyze)
+
 ################################################################################
 #                               CLANG-FORMAT TARGET                            #
 ################################################################################
@@ -1027,12 +942,38 @@ $$(eval $$(call clang_format_rules, $$(MY_LIB_NAME)-test, \
                                     $$(TEST_SRC_FILES)))
 endif
 
-ifneq ($$(MAKECMDGOALS),clean)
-ifneq ($$(MAKECMDGOALS),clean-docs)
-ifneq ($$(MAKECMDGOALS),clean-all)
-ifneq ($$(MAKECMDGOALS),format)
-ifneq ($$(MAKECMDGOALS),docs)
 
+ifneq ($$(MAKECMDGOALS),format)
+
+
+################################################################################
+#                            SETUP BUILD DIRECTORY                             #
+################################################################################
+
+LIB_OBJ_BASE_DIR:= $$(OBJS_BASE_DIR)lib/
+SO_OBJ_BASE_DIR:= $$(OBJS_BASE_DIR)so/
+
+SRC_LIB_OBJ_DIRS:= $$(addprefix $$(LIB_OBJ_BASE_DIR),$$(SRC_DIRS))
+SRC_SO_OBJ_DIRS:= $$(addprefix $$(SO_OBJ_BASE_DIR),$$(SRC_DIRS))
+
+$$(shell mkdir -p $$(SRC_LIB_OBJ_DIRS))
+$$(shell mkdir -p $$(SRC_SO_OBJ_DIRS))
+
+#Identify all object files that need to be created based on the source files
+$$(eval $$(call srcToObj, SRC_LIB_OBJ_FILES, $$(LIB_OBJ_BASE_DIR),$$(SRC_FILES) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES)))
+$$(eval $$(call srcToObj, SRC_SO_OBJ_FILES, $$(SO_OBJ_BASE_DIR),$$(SRC_FILES) $$(GEN_SRC_C_FILES) $$(GEN_SRC_CXX_FILES)))
+
+
+ifneq ($$(UNIT_TEST),NONE)
+
+$$(shell mkdir -p "$$(TEST_SRC_DIR)")
+
+TEST_OBJS_DIRS:= $$(addprefix $$(OBJS_BASE_DIR),$$(TEST_DIRS))
+$$(shell mkdir -p $$(TEST_OBJS_DIRS))
+
+$$(eval $$(call srcToObj, TEST_OBJ_FILES, $$(OBJS_BASE_DIR),$$(TEST_SRC_FILES)))
+
+endif
 
 ################################################################################
 #                            CODE GENERATION RULES                             #
@@ -1068,7 +1009,6 @@ endif
 #                                COMPILE RULES                                 #
 ################################################################################
 
-
 $$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call cpp_directory_rules,$$(LIB_OBJ_BASE_DIR),$$(bdir),$$(MY_CXXFLAGS))))
 $$(foreach bdir,$$(SRC_DIRS),$$(eval $$(call c_directory_rules,$$(LIB_OBJ_BASE_DIR),$$(bdir),$$(MY_CFLAGS))))
 
@@ -1086,7 +1026,7 @@ endif
 
 #PROTO DEPENDENCIES ONLY EXIST IN LIB_OBJ_BASE_DIR -- IT DOESN'T NEED TO EXIST
 #IN BOTH PLACES BECASE IT'S DEPENDENCEIS TO CREATE THE SOURCE FILE -- NOT OBJECT FILE
--include $$(addprefix $$(LIB_OBJ_BASE_DIR),$$(GEN_PROTOBUF_FILES:.cc=.cc.d))
+-include $$(addprefix $$(LIB_OBJ_BASE_DIR),$$(PROTOBUF_FILES:.proto=.proto.d))
 
 -include $$(SRC_LIB_OBJ_FILES:.o=.d)
 -include $$(SRC_SO_OBJ_FILES:.o=.d)
@@ -1104,6 +1044,7 @@ $$(foreach bdir,$$(TEST_DIRS),$$(eval $$(call c_dependency_rules,$$(OBJS_BASE_DI
 
 endif
 
+endif
 endif
 endif
 endif

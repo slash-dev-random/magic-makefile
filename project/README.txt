@@ -159,6 +159,7 @@ to install the following:
         apt-get install libprotobuf-dev
 
 Future Development:
+   * Fix code analysis target to use GUIs instead of spitting results to terminal
    * Add support for building RPM and DEB packages
-   * Add configuration to llow profiling using gprof and/or gcov
+   * Add configuration to allow profiling using gprof and/or gcov
 
