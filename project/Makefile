@@ -3,9 +3,11 @@
 # Basic C/C++ Project Makefile for Linux                                       #
 # Author: Benjamin Cox                                                         #
 # License: CC0 1.0 Universal Licence                                           #
-# Version 1.2                                                                  #
+# Version 1.3                                                                  #
 #                                                                              #
 ################################################################################
+
+MAGIC_MAKEFILE_VERSION=1.3
 
 #Default Configuration is Debug
 CONFIG?=Debug
@@ -45,14 +47,14 @@ endif
 ifneq ($(wildcard $(CONFIG_DIR)/$(CONFIG).mk),)
     include $(CONFIG_DIR)$(CONFIG).mk
 else
-    $(error A configuration file for $(CONFIG) does not exit)
+    $(error A configuration file for $(CONFIG) does not exist.  Please create $(CONFIG_DIR)/$(CONFIG).mk)
 endif
 
 
 #Set Up Build Directory Structure
 BUILD_DIR:= $(BUILD_BASE_DIR)$(CONFIG)/
 TARGET_DIR:= $(BUILD_DIR)$(shell uname -s)-$(shell arch)/
-OBJS_BASE_DIR:= $(TARGET_DIR)objs/
+OBJ_BASE_DIR:= $(TARGET_DIR)objs/
 
 default: default1
 
@@ -66,6 +68,10 @@ GENERATED_TARGETS:=
 
 #Include makefile rules/settings
 include rules.mk
+
+ifneq ($(MAGIC_MAKEFILE_VERSION),$(MAGIC_MAKEFILE_RULES_VERSION))
+$(error rules.mk version ($(MAGIC_MAKEFILE_RULES_VERSION)) does not match Makefile version $(MAGIC_MAKEFILE_VERSION))
+endif
 
 include $(wildcard $(CUSTOM_MAKE_DIR)*.mk)
 

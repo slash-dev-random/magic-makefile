@@ -6,10 +6,10 @@
 #6 - LIBRARY COMPILER FLAGS (e.g. EXTRA INCLUDE DIRECTORIES)
 #7 - APP SPECIFIC LD FLAGS
 
-$(eval $(call library, libexample2,  \
-                       exampleLib2,  \
-                       1.0.0,       \
-                       GTEST,       \
-                       ,            \
-                       ,            \
-                        ))
+$(eval $(call static_library, libexample2,  \
+                              exampleLib2,  \
+                              1.0.0,       \
+                              GTEST,       \
+                              ,            \
+                              ,            \
+                              ))

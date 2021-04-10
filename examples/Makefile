@@ -3,9 +3,11 @@
 # Basic C/C++ Workspace Makefile for Linux                                     #
 # Author: Benjamin Cox                                                         #
 # License: CC0 1.0 Universal Licence                                           #
-# Version 1.2                                                                  #
+# Version 1.3                                                                  #
 #                                                                              #
 ################################################################################
+
+MAGIC_MAKEFILE_VERSION=1.3
 
 #Default Configuration is Debug
 CONFIG?=Debug
@@ -45,6 +47,10 @@ GENERATED_TARGETS:=
 #Include makefile rules/settings
 include rules.mk
 
+ifneq ($(MAGIC_MAKEFILE_VERSION),$(MAGIC_MAKEFILE_RULES_VERSION))
+$(error rules.mk version ($(MAGIC_MAKEFILE_RULES_VERSION)) does not match Makefile version $(MAGIC_MAKEFILE_VERSION))
+endif
+
 CUSTOM_MAKE_DIR:=make/
 
 define module_setup =
@@ -62,7 +68,7 @@ BUILD_BASE_DIR:=build/
 #Set Up Build Directory Structure
 BUILD_DIR:=$$(BUILD_BASE_DIR)$$(CONFIG)/
 TARGET_DIR:=$$(BUILD_DIR)$$(shell uname -s)-$$(shell arch)/
-OBJS_BASE_DIR:=$$(TARGET_DIR)objs/
+OBJ_BASE_DIR:=$$(TARGET_DIR)objs/
 
 #Configure Flags and Directories per Configuration
 include $$(CONFIG_DIR)$$(CONFIG).mk
